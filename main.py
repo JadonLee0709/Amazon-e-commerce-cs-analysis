@@ -3,7 +3,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 해당 데이터는 kaggle에서 가져온 데이터이고 synthetically 하다고 명시 되어 있었음 (rink = https://www.kaggle.com/datasets/sharmajicoder/amazon-e-commerce)
+# 해당 데이터는 kaggle에서 가져온 데이터이고 synthetically 하다고 명시 되어 있었음 (link = https://www.kaggle.com/datasets/sharmajicoder/amazon-e-commerce)
 amazon_db = pd.read_csv("/users/ihyeonho/Py_project/Amazon_e_commerce/data/amazon_e_commerce.csv") # 맥북용
 #amazon_db = pd.read_csv("/users/ihyeonho/Desktop/JadonLee0709/Amazon-e-commerce-cs-analysis/data/amazon_e_commerce.csv") # 맥미니용
 
@@ -77,17 +77,39 @@ def count_outliers(series):
     outliers = series[(series < lower_bound) | (series > upper_bound)] # 이상치 -> 상한보다 크거나 하한보다 작은경우
     return len(outliers)
 
-false_group = amazon_db[amazon_db['is_returned'] == False]['rating']
-true_group = amazon_db[amazon_db['is_returned'] == True]['rating']
+rating_false_group = amazon_db[amazon_db['is_returned'] == False]['rating']
+rating_true_group = amazon_db[amazon_db['is_returned'] == True]['rating']
 
 compare_by_return(amazon_db, 'rating') # 1번에 있던 함수 불러와서 결과 도출(반품에 따른 평점 분석)
 
-print('False 그룹 이상치 개수:', count_outliers(false_group)) # 반품 안한 그룹
-print('True 그룹 이상치 개수:', count_outliers(true_group)) # 반품 한 그룹
+print('False 그룹 이상치 개수:', count_outliers(rating_false_group)) # 반품 안한 그룹
+print('True 그룹 이상치 개수:', count_outliers(rating_true_group)) # 반품 한 그룹
 print()
 
 # 3. 판매자의 평점과 반품의 관계 (판매자의 평점이 낮을수록, 반품률이 증가하는가?)
+print("3. 판매자의 평점과 반품의 관계")
+print()
+sns.boxplot(x = 'is_returned', y = 'seller_rating', data=amazon_db)
+plt.xlabel('Is Returned')
+plt.ylabel('Seller Rating')
+plt.title('Seller Rating Distribution by Returned Status')
 
+amazon_db_is_returned_seller_rating_group_count = amazon_db.groupby('is_returned')['seller_rating'].count()
+
+plt.ylim(amazon_db['seller_rating'].min() - 0.3, amazon_db['seller_rating'].max() + 0.5)
+for i, (group, count) in enumerate(amazon_db_is_returned_seller_rating_group_count.items()):
+    plt.text(i, amazon_db['seller_rating'].max() + 0.05, 'n={}'.format(count), ha = 'center')
+
+plt.show()
+
+seller_rating_false_group = amazon_db[amazon_db['is_returned'] == False]['seller_rating']
+seller_rating_true_group = amazon_db[amazon_db['is_returned'] == True]['seller_rating']
+
+compare_by_return(amazon_db, 'seller_rating')
+
+print('Seller Rating False 그룹 이상치 개수:', count_outliers(seller_rating_false_group)) # 반품 안한 그룹
+print('Seller Rating True 그룹 이상치 개수:', count_outliers(seller_rating_true_group)) # 반품 한 그룹
+print()
 
 
 # 재구매 횟수 계산 (user_id + seller_id 조합별 구매 횟수)
