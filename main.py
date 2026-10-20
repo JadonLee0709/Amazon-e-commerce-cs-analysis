@@ -93,6 +93,14 @@ print('False 그룹 이상치 개수:', count_outliers(rating_false_group)) # �
 print('True 그룹 이상치 개수:', count_outliers(rating_true_group)) # 반품 한 그룹
 print()
 
+# 평점 구간별 반품률 (평균 차이는 작아도 낮은 평점 구간에 반품이 몰려 있는지 확인)
+rating_floor_group = amazon_db.groupby(np.floor(amazon_db['rating']))['is_returned'].agg(['mean', 'size'])
+rating_floor_group['mean'] = rating_floor_group['mean'] * 100
+rating_floor_group.columns = ['return_rate(%)', 'orders']
+print('평점 구간별 반품률 (소수점 버림 기준, 예: 3 = 3.0~3.9점):')
+print(rating_floor_group)
+print()
+
 # 3. 판매자의 평점과 반품의 관계 (판매자의 평점이 낮을수록, 반품률이 증가하는가?)
 print("3. 판매자의 평점과 반품의 관계")
 print()
@@ -255,6 +263,17 @@ print()
 print('월별 판매량 1위 카테고리:')
 print(monthly_category.idxmax(axis = 1))
 
+# 월에 따라 카테고리 비중이 달라지는지 카이제곱 검정
+# -> 주문이 너무 적은 달(데이터 시작일이 월 중간이라 며칠치만 있는 달)은 비교가 왜곡되므로 제외
+monthly_total = monthly_category.sum(axis = 1)
+partial_months = monthly_total[monthly_total < monthly_total.median() * 0.5].index.tolist()
+print('검정에서 제외한 달(주문 수가 중앙값의 절반 미만):', partial_months)
+month_category_test = monthly_category.drop(index = partial_months)
+chi2_m, p_m, dof_m, _ = stats.chi2_contingency(month_category_test)
+v_m = np.sqrt(chi2_m / (month_category_test.values.sum() * (min(month_category_test.shape) - 1)))
+print('월 x 카테고리 카이제곱: {:.4f}, 자유도: {}, p-value: {:.4f}, Cramér\'s V: {:.4f}'.format(chi2_m, dof_m, p_m, v_m))
+print('월별 주문 건수 범위(제외한 달 빼고): {:,} ~ {:,}'.format(month_category_test.sum(axis = 1).min(), month_category_test.sum(axis = 1).max()))
+
 monthly_category.plot(figsize = (12, 6))
 plt.xlabel('Year-Month')
 plt.ylabel('Orders')
@@ -302,6 +321,14 @@ location_brand_table = pd.crosstab(location_brand_sub['location'], location_bran
 
 print('지역별 판매량 1위 브랜드:')
 print(location_brand_table.idxmax(axis = 1))
+
+# 지역과 브랜드가 독립인지 카이제곱 검정 (상위 10개가 아니라 전체 지역 x 전체 브랜드 기준)
+location_brand_all = pd.crosstab(amazon_db['location'], amazon_db['brand'])
+chi2_lb, p_lb, dof_lb, _ = stats.chi2_contingency(location_brand_all)
+v_lb = np.sqrt(chi2_lb / (location_brand_all.values.sum() * (min(location_brand_all.shape) - 1)))
+print('지역별 주문 건수:')
+print(amazon_db['location'].value_counts())
+print('지역 x 브랜드 카이제곱: {:.4f}, 자유도: {}, p-value: {:.4f}, Cramér\'s V: {:.4f}'.format(chi2_lb, dof_lb, p_lb, v_lb))
 
 plt.figure(figsize = (12, 7))
 sns.heatmap(location_brand_table, annot = True, fmt = 'd', cmap = 'Blues')
