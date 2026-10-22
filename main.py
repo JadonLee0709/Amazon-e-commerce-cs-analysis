@@ -38,7 +38,7 @@ plt.show()
 
 # ** 배송 기간과 반품의 관계 t-test 검정, levene 검정
 # -> t-test 전에 Levene으로 두 그룹의 분산이 같은지 먼저 확인 (등분산 가정 여부에 따라 t-test 계산 방식이 달라지기 때문)
-def compare_by_return(df, col): # # is_returned 기준으로 그룹 나누고, col 값으로 비교 (배송기간, 평점 등)
+def compare_by_return(df, col): # # is_returned 기준으로 그룹 나누고, col 값으로 비교 (배송기간, 평점 등) p-value 연산식
     returned = df[df['is_returned'] == True][col]
     not_returned = df[df['is_returned'] == False][col]
 
@@ -54,6 +54,8 @@ def compare_by_return(df, col): # # is_returned 기준으로 그룹 나누고, c
         print('→ 결론: {}와 반품 사이에는 통계적으로 유의미한 관계가 있음'.format(col))
     else:
         print('→ 결론: {}와 반품 사이에는 통계적으로 유의미한 차이가 없음'.format(col))
+
+    print('반품 분산: {:.4f}, 비반품 분산: {:.4f}'.format(returned.var(), not_returned.var()))
 
 compare_by_return(amazon_db, 'shipping_time_days')
 print()
