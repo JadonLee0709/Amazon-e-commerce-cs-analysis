@@ -55,7 +55,7 @@ def compare_by_return(df, col): # # is_returned 기준으로 그룹 나누고, c
     else:
         print('→ 결론: {}와 반품 사이에는 통계적으로 유의미한 차이가 없음'.format(col))
 
-    print('반품 분산: {:.4f}, 비반품 분산: {:.4f}'.format(returned.var(), not_returned.var()))
+    print('반품 분산: {:.4f}, 비반품 분산: {:.4f}'.format(returned.var(), not_returned.var())) # 반품 비반품 분산
 
 compare_by_return(amazon_db, 'shipping_time_days')
 print()
